@@ -150,7 +150,6 @@
     const auth = getAuth();
     const provider = new GoogleAuthProvider();
     
-    // تأكد من استخدام الرابط الصحيح (الذي ينتهي بـ /exec)
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKIYsR611T7_VORhU2UxViapC-jqtLsbflhV6tRMDI8M2SRIHfqPoMswkwChNXiY0NEg/exec";
 
     window.manualLogin = async function() {
@@ -200,33 +199,47 @@
     window.loginWithGoogle = function() {
         signInWithPopup(auth, provider)
             .then(async (result) => {
-                const uid = result.user.uid;
+                const user = result.user;
                 
-                // نرسل الـ UID للسكريبت للبحث عنه في شيت Users
+                Swal.fire({
+                    title: 'جاري مزامنة بياناتك...',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify({
-                        action: "loginManual",
-                        identifier: uid,
-                        password: "no_password_google" // السكريبت سيتعرف عليه من الـ UID في العمود A
+                        action: "googleLogin",
+                        uid: user.uid,
+                        name: user.displayName,
+                        email: user.email
                     })
                 });
                 const data = await response.json();
 
                 if(data.accessToken) {
                     saveUserData(data);
-                    window.location.href = "index.html";
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم الدخول',
+                        text: `مرحباً بك ${data.name}`,
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => window.location.href = "index.html");
                 } else {
-                    Swal.fire('حساب غير موجود', 'يرجى إنشاء حساب أولاً عبر جوجل قبل محاولة تسجيل الدخول.', 'warning');
+                    throw new Error("فشل المزامنة");
                 }
             })
-            .catch(() => Swal.fire('خطأ', 'فشل الاتصال بجوجل', 'error'));
+            .catch((error) => {
+                console.error(error);
+                Swal.fire('خطأ في السيرفر', 'فشل الحفظ أو المزامنة مع قاعدة البيانات', 'error');
+            });
     }
 
     function saveUserData(data) {
         localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("refreshToken", data.refreshToken);
         localStorage.setItem("userUID", data.uid);
         localStorage.setItem("userName", data.name);
         localStorage.setItem("userRole", data.role);
