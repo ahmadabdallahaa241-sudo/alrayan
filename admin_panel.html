@@ -198,7 +198,7 @@
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ ...payload, token: token })
         });
-        if (!res.ok) throw new Error("Network error");
+        if (!res.ok) throw new Error("مشكلة في الشبكة");
         const text = await res.text();
         try { return JSON.parse(text); } catch (e) { return { result: text }; }
     }
@@ -273,11 +273,11 @@
     async function approveFinancial(type, row, uid, amount) {
         Swal.fire({ title: 'جاري المعالجة...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         try {
-            const res = await adminFetch({ action: "adminAction", type: type, row: row, targetUid: uid, amount: parseFloat(amount), status: "مكتمل" });
-            if(res.result === "success") {
+            const data = await adminFetch({ action: "adminAction", type: type, row: row, targetUid: uid, amount: parseFloat(amount), status: "مكتمل" });
+            if(data.result === "success" || data.status === "success") {
                 Toast.fire({ icon: 'success', title: 'تمت الموافقة وتحديث الرصيد' });
                 fetchFinancial();
-            } else { throw new Error(res.result); }
+            } else { throw new Error(data.message || data.result); }
         } catch (e) { Toast.fire({ icon: 'error', title: 'فشلت العملية: ' + e.message }); }
     }
 
@@ -288,21 +288,21 @@
         
         Swal.fire({ title: 'جاري الشحن...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         try {
-            const res = await adminFetch({ 
+            const data = await adminFetch({ 
                 action: "adminAction", 
                 type: "Deposits", 
                 targetUid: id, 
                 amount: amt, 
                 status: "مكتمل", 
                 details: "شحن يدوي من الإدارة",
-                row: 0 
+                row: "MANUAL" 
             });
-            if(res.result === "success") {
+            if(data.result === "success" || data.status === "success") {
                 Toast.fire({ icon: 'success', title: 'تم شحن الرصيد بنجاح' });
                 document.getElementById('targetId').value = ""; 
                 document.getElementById('topupAmount').value = "";
                 fetchFinancial();
-            } else { throw new Error(res.result); }
+            } else { throw new Error(data.message || data.result); }
         } catch (e) { Toast.fire({ icon: 'error', title: 'حدث خطأ: ' + e.message }); }
     }
 
