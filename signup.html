@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <title>إنشاء حساب - متجر الريان</title>
+    <style>
+        :root { --neon-blue: #00d2ff; --bg-dark: #050510; }
+        body { background-color: var(--bg-dark); color: white; margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'Segoe UI', sans-serif; }
+        .auth-container { padding: 20px; width: 100%; max-width: 420px; text-align: center; }
+        .auth-card { background: rgba(10, 10, 30, 0.8); padding: 35px 25px; border-radius: 30px; border: 2px solid var(--neon-blue); box-shadow: 0 0 30px rgba(0, 210, 255, 0.2); backdrop-filter: blur(15px); }
+        h2 { background: linear-gradient(to right, #fff, var(--neon-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; }
+        .auth-input { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; background: rgba(255,255,255,0.03); color: white; text-align: center; outline: none; }
+        .btn-signup { width: 100%; background: transparent; border: 2px solid var(--neon-blue); padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; color: var(--neon-blue); transition: 0.4s; }
+        .btn-signup:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 25px var(--neon-blue); }
+        .google-btn { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; margin-top: 20px; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer; color: #fff; }
+        #otp-section { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="auth-container">
+    <div class="auth-card" id="signup-form">
+        <h2>حساب جديد</h2>
+        <input type="text" id="regName" class="auth-input" placeholder="الاسم الكامل">
+        <input type="email" id="regEmail" class="auth-input" placeholder="البريد الإلكتروني">
+        <input type="password" id="regPass" class="auth-input" placeholder="كلمة المرور">
+        <input type="password" id="confirmPass" class="auth-input" placeholder="تأكيد كلمة المرور">
+        <input type="tel" id="regPhone" class="auth-input" placeholder="رقم الهاتف">
+        <input type="text" id="regCountry" class="auth-input" placeholder="البلد">
+        <button class="btn-signup" onclick="startManualSignup()">إنشاء الحساب</button>
+        <button class="google-btn" onclick="loginWithGoogle()">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="22">
+            <span>التسجيل باستخدام Google</span>
+        </button>
+    </div>
+
+    <div class="auth-card" id="otp-section">
+        <h2>تأكيد الحساب</h2>
+        <input type="text" id="otpInput" class="auth-input" placeholder="رمز التأكيد">
+        <button class="btn-signup" id="verifyBtn" onclick="verifyOTP()">تفعيل الحساب</button>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBtKuvlJuNva1jBBWFd-N1-xrTCn9XbgX8",
+        authDomain: "al-rayan-store-8f984.firebaseapp.com",
+        projectId: "al-rayan-store-8f984",
+        storageBucket: "al-rayan-store-8f984.firebasestorage.app",
+        messagingSenderId: "412981353095",
+        appId: "1:412981353095:web:8f9969bfe50404a217f622"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth();
+    const provider = new GoogleAuthProvider();
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKIYsR611T7_VORhU2UxViapC-jqtLsbflhV6tRMDI8M2SRIHfqPoMswkwChNXiY0NEg/exec";
+
+    let generatedOTP, tempUserData = {};
+
+    window.startManualSignup = function() {
+        const name = document.getElementById('regName').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const pass = document.getElementById('regPass').value;
+        if (pass !== document.getElementById('confirmPass').value) return Swal.fire('خطأ', 'كلمات المرور غير متطابقة', 'error');
+        
+        generatedOTP = Math.floor(100000 + Math.random() * 900000);
+        Swal.fire('رمز التحقق', 'رمزك هو: ' + generatedOTP, 'info');
+        tempUserData = { name, email, pass, phone: document.getElementById('regPhone').value, country: document.getElementById('regCountry').value };
+        document.getElementById('signup-form').style.display = 'none';
+        document.getElementById('otp-section').style.display = 'block';
+    }
+
+    window.verifyOTP = function() {
+        if (document.getElementById('otpInput').value == generatedOTP) {
+            createUserWithEmailAndPassword(auth, tempUserData.email, tempUserData.pass)
+                .then(res => saveToSheet(res.user.uid, tempUserData.name, tempUserData.email, tempUserData.phone, tempUserData.country, tempUserData.pass))
+                .catch(err => Swal.fire('فشل', err.message, 'error'));
+        }
+    }
+
+    window.loginWithGoogle = function() {
+        signInWithPopup(auth, provider).then(res => {
+            const randomPass = "google_" + Math.random().toString(36).slice(-8);
+            saveToSheet(res.user.uid, res.user.displayName, res.user.email, "Google", "Google", randomPass);
+        });
+    }
+
+function saveToSheet(uid, name, email, phone, country, pass) {
+    Swal.fire({
+        title: 'جاري مزامنة الحساب...',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+    });
+
+    const payload = {
+        action: "signup",
+        uid: String(uid),
+        name: String(name),
+        email: String(email),
+        phone: String(phone),
+        country: String(country),
+        pass: String(pass)
+    };
+
+    // نستخدم JSON.stringify ونرسله كـ text/plain لتجنب مشاكل الـ CORS بالكامل
+    fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.result === "success") {
+            localStorage.setItem("accessToken", data.accessToken);
+            localStorage.setItem("refreshToken", data.refreshToken);
+            localStorage.setItem("userUID", uid);
+            localStorage.setItem("userName", name);
+            localStorage.setItem("userRole", "user");
+            
+            Swal.fire('نجح التسجيل', 'تم حفظ بياناتك بنجاح', 'success').then(() => {
+                window.location.href = "index.html";
+            });
+        } else {
+            Swal.fire('خطأ في السيرفر', data.result || 'فشل الحفظ', 'error');
+        }
+    })
+    .catch(err => {
+        console.error("Signup Fetch Error:", err);
+        Swal.fire('فشل الاتصال', 'حدث خطأ أثناء الاتصال بقاعدة البيانات. تأكد من نشر السكريبت كـ Web App بصلاحية Anyone.', 'error');
+    });
+}
+
+
+</script>
+</body>
+</html>

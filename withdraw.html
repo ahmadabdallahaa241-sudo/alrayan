@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>سحب الرصيد - متجر الريان</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --neon-blue: #00d2ff;
+            --neon-green: #00ff88;
+            --neon-red: #ff4b2b;
+            --bg-dark: #050510;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #fff; margin: 0; font-family: 'Segoe UI', sans-serif;
+            overflow-x: hidden; min-height: 100vh;
+        }
+
+        .main-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 20px; background: rgba(10, 10, 30, 0.9);
+            backdrop-filter: blur(12px); border-bottom: 2px solid var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.3); position: sticky; top: 0; z-index: 1000;
+        }
+
+        .btn-back { color: var(--neon-blue); text-decoration: none; font-size: 1.2rem; }
+        .balance-badge {
+            background: rgba(0, 255, 136, 0.1); padding: 5px 12px; border-radius: 15px;
+            border: 1px solid var(--neon-green); color: var(--neon-green); font-weight: bold;
+        }
+
+        .container { padding: 40px 15px 120px; max-width: 800px; margin: 0 auto; }
+        
+        .withdraw-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px 15px; }
+        .withdraw-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.3s; }
+
+        .free-icon {
+            position: relative; width: 100px; height: 90px; display: flex;
+            justify-content: center; align-items: center;
+        }
+
+        .free-icon img {
+            width: 60px; height: 60px; object-fit: contain;
+            filter: drop-shadow(0 0 10px var(--neon-blue));
+        }
+
+        .withdraw-item h3 {
+            margin-top: 15px; padding: 10px; border: 2px solid var(--neon-blue);
+            border-radius: 12px; background: rgba(10, 10, 30, 0.8);
+            box-shadow: 0 0 10px var(--neon-blue); font-size: 0.85rem; color: #fff;
+            text-align: center; width: 100%; box-sizing: border-box;
+        }
+
+        .modal {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(5, 5, 15, 0.95);
+            z-index: 2000; justify-content: center; align-items: center;
+        }
+
+        .modal-content {
+            background: #0a0a1e; padding: 25px; border-radius: 25px;
+            width: 85%; max-width: 380px; border: 2px solid var(--neon-blue);
+            box-shadow: 0 0 30px var(--neon-blue); text-align: center;
+        }
+
+        input {
+            width: 100%; padding: 14px; margin: 8px 0; background: #000;
+            border: 1px solid var(--glass); border-radius: 12px; color: #fff;
+            text-align: center; box-sizing: border-box; outline: none;
+        }
+        
+        .fee-info {
+            background: rgba(255, 255, 255, 0.05); padding: 10px;
+            border-radius: 10px; margin: 10px 0; font-size: 0.8rem; color: #aaa;
+        }
+
+        #netAmountDisplay { color: var(--neon-green); font-weight: bold; }
+
+        .btn-submit {
+            width: 100%; padding: 15px; background: transparent; border: 2px solid var(--neon-green);
+            color: var(--neon-green); border-radius: 12px; font-weight: bold; cursor: pointer;
+            margin-top: 10px; transition: 0.3s;
+        }
+        
+        .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+<header class="main-header">
+    <a href="index.html" class="btn-back"><i class="fas fa-chevron-right"></i></a>
+    <div style="font-weight: 900; color: var(--neon-blue);">سحب الأرباح</div>
+    <div class="balance-badge" id="userBalance">0.00 $</div>
+</header>
+
+<div class="container">
+    <div class="withdraw-grid">
+        <div class="withdraw-item" onclick="openWithdraw('USDT BEP20')">
+            <div class="free-icon"><img src="https://cryptologos.cc/logos/tether-usdt-logo.png"></div>
+            <h3>USDT (BEP20)</h3>
+        </div>
+        <div class="withdraw-item" onclick="openWithdraw('USDT TRC20')">
+            <div class="free-icon"><img src="https://cryptologos.cc/logos/tether-usdt-logo.png"></div>
+            <h3>USDT (TRC20)</h3>
+        </div>
+        <div class="withdraw-item" onclick="openWithdraw('شام كاش')">
+            <div class="free-icon"><i class="fas fa-wallet" style="font-size: 3rem; color: var(--neon-blue);"></i></div>
+            <h3>شام كاش</h3>
+        </div>
+        <div class="withdraw-item" onclick="openWithdraw('سيرياتيل كاش')">
+            <div class="free-icon"><i class="fas fa-mobile-screen" style="font-size: 3rem; color: var(--neon-blue);"></i></div>
+            <h3>سيرياتيل كاش</h3>
+        </div>
+    </div>
+</div>
+
+<div id="withdrawModal" class="modal">
+    <div class="modal-content">
+        <h3 id="methodTitle" style="color: var(--neon-blue); margin-bottom: 15px;">وسيلة السحب</h3>
+        
+        <input type="number" id="withdrawAmount" placeholder="المبلغ المطلوب سحبه ($)" oninput="calculateFees()">
+        <input type="text" id="accountDetails" placeholder="رقم المحفظة / الحساب">
+        
+        <div class="fee-info">
+            الأجور: <span id="feeDisplay">0.00</span> $<br>
+            يصلك بالصافي: <span id="netAmountDisplay">0.00</span> $
+        </div>
+
+        <button class="btn-submit" id="submitBtn" onclick="submitWithdraw()">تأكيد طلب السحب</button>
+        <div onclick="closeModal()" style="color:var(--neon-red); margin-top:15px; cursor:pointer; font-weight:bold; font-size: 0.9rem;">إلغاء</div>
+    </div>
+</div>
+
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKIYsR611T7_VORhU2UxViapC-jqtLsbflhV6tRMDI8M2SRIHfqPoMswkwChNXiY0NEg/exec";
+    let selectedMethod = "";
+    let userCurrentBalance = 0;
+
+    async function loadBalance() {
+        const token = localStorage.getItem("accessToken");
+        if (!token) { window.location.href="login.html"; return; }
+        try {
+            const res = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: "getUserData", Authorization: "Bearer " + token })
+            });
+            const data = await res.json();
+            userCurrentBalance = parseFloat(data.balance || 0);
+            document.getElementById('userBalance').innerText = userCurrentBalance.toFixed(2) + " $";
+        } catch (e) { console.log("Balance Error"); }
+    }
+
+    function openWithdraw(method) {
+        selectedMethod = method;
+        document.getElementById('methodTitle').innerText = "سحب عبر: " + method;
+        document.getElementById('withdrawModal').style.display = 'flex';
+        calculateFees();
+    }
+
+    function calculateFees() {
+        const amount = parseFloat(document.getElementById('withdrawAmount').value) || 0;
+        let fee = 0;
+
+        if (selectedMethod === 'USDT BEP20') {
+            fee = (amount < 100) ? 2 : (amount * 0.02);
+        } else if (selectedMethod === 'USDT TRC20') {
+            fee = (amount < 100) ? 5 : (amount * 0.05);
+        } else if (selectedMethod === 'شام كاش') {
+            fee = 1;
+        } else if (selectedMethod === 'سيرياتيل كاش') {
+            fee = 2;
+        }
+
+        const net = amount > fee ? amount - fee : 0;
+        document.getElementById('feeDisplay').innerText = fee.toFixed(2);
+        document.getElementById('netAmountDisplay').innerText = net.toFixed(2);
+    }
+
+    function closeModal() {
+        document.getElementById('withdrawModal').style.display = 'none';
+        document.getElementById('withdrawAmount').value = "";
+        document.getElementById('accountDetails').value = "";
+    }
+
+    async function submitWithdraw() {
+        const token = localStorage.getItem("accessToken");
+        const amount = parseFloat(document.getElementById('withdrawAmount').value);
+        const details = document.getElementById('accountDetails').value.trim();
+        const fee = parseFloat(document.getElementById('feeDisplay').innerText);
+
+        if (!amount || amount <= 0 || !details) return Swal.fire('تنبيه', 'يرجى إكمال البيانات', 'warning');
+        if (amount > userCurrentBalance) return Swal.fire('خطأ', 'رصيدك لا يكفي لهذا المبلغ', 'error');
+
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerText = "جاري الإرسال...";
+
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: "processWithdraw",
+                    Authorization: "Bearer " + token,
+                    amount: amount,
+                    method: `${selectedMethod} | الحساب: ${details} | الأجور: ${fee}$`
+                })
+            });
+            const res = await response.json();
+            
+            if (res.result === "success") {
+                // حل مشكلة ظهور التنبيه خلف المودال
+                closeModal(); 
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'تم بنجاح',
+                    text: 'تم تسجيل طلب السحب وخصم الرصيد بانتظار الموافقة',
+                    background: '#0a0a1e',
+                    color: '#fff',
+                    confirmButtonColor: 'var(--neon-green)',
+                    didOpen: () => {
+                        Swal.getContainer().style.zIndex = "3000";
+                    }
+                }).then(() => {
+                    window.location.href = "index.html";
+                });
+            } else {
+                Swal.fire('فشل', 'حدث خطأ أثناء المعالجة أو رصيد غير كافٍ', 'error');
+                btn.disabled = false;
+                btn.innerText = "تأكيد طلب السحب";
+            }
+        } catch (e) {
+            Swal.fire('خطأ', 'مشكلة في الاتصال بالسيرفر', 'error');
+            btn.disabled = false;
+            btn.innerText = "تأكيد طلب السحب";
+        }
+    }
+
+    window.onload = loadBalance;
+</script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <title>محفظتي - متجر الريان</title>
+    <style>
+        :root {
+            --neon-blue: #00d2ff;
+            --neon-green: #00ff88;
+            --neon-red: #ff3131;
+            --bg-dark: #050510;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #fff; margin: 0; font-family: 'Segoe UI', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .main-header {
+            display: flex; align-items: center; padding: 15px 20px;
+            background: rgba(10, 10, 30, 0.9); border-bottom: 2px solid var(--neon-blue);
+            position: sticky; top: 0; z-index: 1000;
+        }
+
+        .btn-back { color: var(--neon-blue); text-decoration: none; font-size: 1.2rem; margin-left: 15px; }
+
+        .container { padding: 20px; max-width: 600px; margin: 0 auto; }
+
+        .balance-card {
+            background: linear-gradient(135deg, rgba(0, 210, 255, 0.1), rgba(0, 255, 136, 0.1));
+            border: 2px solid var(--neon-blue); border-radius: 25px; padding: 30px;
+            text-align: center; margin-bottom: 25px; box-shadow: 0 0 20px rgba(0, 210, 255, 0.2);
+        }
+
+        .balance-amount { font-size: 3rem; font-weight: 900; color: var(--neon-green); text-shadow: 0 0 15px var(--neon-green); }
+
+        .action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
+        
+        .btn-action {
+            padding: 15px; border-radius: 15px; border: none; font-weight: bold;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+            transition: 0.3s; font-size: 1rem;
+        }
+
+        .btn-deposit { background: rgba(0, 255, 136, 0.1); border: 1px solid var(--neon-green); color: var(--neon-green); }
+        .btn-withdraw { background: rgba(255, 49, 49, 0.1); border: 1px solid var(--neon-red); color: var(--neon-red); }
+        .btn-action:active { transform: scale(0.95); }
+
+        .section-title { color: var(--neon-blue); margin-bottom: 15px; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+
+        .transaction-item {
+            background: var(--glass); border-radius: 15px; padding: 15px;
+            margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.05);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .status-badge { padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; }
+        .status-success { background: rgba(0, 255, 136, 0.1); color: var(--neon-green); }
+        .status-pending { background: rgba(255, 204, 0, 0.1); color: #ffcc00; }
+    </style>
+</head>
+<body>
+
+<header class="main-header">
+    <a href="index.html" class="btn-back"><i class="fas fa-chevron-right"></i></a>
+    <div style="font-weight: 900;">محفظة الريان</div>
+</header>
+
+<div class="container">
+    <div class="balance-card">
+        <div style="font-size: 0.9rem; color: #aaa; margin-bottom: 5px;">رصيدك الحالي</div>
+        <div class="balance-amount" id="userBalance">0.00 $</div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="btn-action btn-deposit" onclick="location.href='deposit.html'">
+            <i class="fas fa-plus-circle"></i> إيداع
+        </button>
+        <button class="btn-action btn-withdraw" onclick="location.href='withdraw.html'">
+            <i class="fas fa-minus-circle"></i> سحب
+        </button>
+    </div>
+
+    <div class="section-title"><i class="fas fa-history"></i> سجل العمليات</div>
+    <div id="transactionsList">
+        <p style="text-align:center; color:var(--neon-blue); padding:20px;">جاري جلب البيانات...</p>
+    </div>
+</div>
+
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKIYsR611T7_VORhU2UxViapC-jqtLsbflhV6tRMDI8M2SRIHfqPoMswkwChNXiY0NEg/exec";
+
+    async function fetchWalletUpdates() {
+        const token = localStorage.getItem("accessToken");
+        if (!token) {
+            window.location.href = "login.html";
+            return;
+        }
+
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ 
+                    action: "getUserData", 
+                    Authorization: "Bearer " + token 
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.error === "unauthorized") {
+                localStorage.clear();
+                window.location.href = "login.html";
+                return;
+            }
+
+            document.getElementById('userBalance').innerText = parseFloat(data.balance || 0).toFixed(2) + " $";
+            localStorage.setItem("userBalance", data.balance);
+
+            const list = document.getElementById('transactionsList');
+            list.innerHTML = "";
+
+            if (!data.transactions || data.transactions.length === 0) {
+                list.innerHTML = '<p style="text-align:center; color:#555; padding:20px;">لا توجد عمليات سابقة في حسابك</p>';
+                return;
+            }
+
+            // ترتيب العمليات: الأحدث أولاً
+            data.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            data.transactions.forEach(tx => {
+                const isDeposit = tx.type === "Deposit";
+                const statusClass = (tx.status === "مكتمل" || tx.status === "Success") ? "status-success" : "status-pending";
+                
+                // معالجة التاريخ لضمان العرض
+                let displayDate = "تاريخ غير متوفر";
+                if (tx.date) {
+                    const parsedDate = new Date(tx.date);
+                    if (!isNaN(parsedDate)) {
+                        displayDate = parsedDate.toLocaleDateString('ar-EG', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                        });
+                    }
+                }
+
+                const item = document.createElement('div');
+                item.className = 'transaction-item';
+                item.innerHTML = `
+                    <div>
+                        <div style="font-weight:bold; font-size:0.9rem;">${isDeposit ? 'إيداع رصيد' : 'طلب سحب'}</div>
+                        <div style="font-size:0.75rem; color:#888;">${displayDate}</div>
+                    </div>
+                    <div style="text-align:left;">
+                        <div style="font-weight:900; color:${isDeposit ? 'var(--neon-green)' : 'var(--neon-red)'}">
+                            ${isDeposit ? '+' : '-'}${parseFloat(tx.amount).toFixed(2)} $
+                        </div>
+                        <span class="status-badge ${statusClass}">${tx.status}</span>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        } catch (e) {
+            console.error("Wallet Error:", e);
+            document.getElementById('transactionsList').innerHTML = '<p style="text-align:center; color:var(--neon-red); padding:20px;">عذراً، تعذر الاتصال بالسيرفر</p>';
+        }
+    }
+
+    window.onload = fetchWalletUpdates;
+</script>
+</body>
+</html>

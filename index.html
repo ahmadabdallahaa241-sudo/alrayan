@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <title>متجر الريان - الرئيسية</title>
+    <style>
+        :root {
+            --neon-blue: #00d2ff;
+            --neon-purple: #9d50bb;
+            --neon-red: #ff3131;
+            --bg-dark: #050510;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #fff;
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* --- الهيدر --- */
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(10, 10, 30, 0.9);
+            backdrop-filter: blur(12px);
+            border-bottom: 2px solid var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.3);
+            position: sticky;
+            top: 0; z-index: 1000;
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-logo {
+            width: 35px;
+            height: 35px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 5px var(--neon-blue));
+        }
+
+        .brand-title {
+            font-size: 1.6rem;
+            background: linear-gradient(to right, #fff, var(--neon-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+            margin: 0;
+        }
+
+        .header-balance {
+            border: 1px solid var(--neon-blue);
+            padding: 5px 15px;
+            border-radius: 20px;
+            background: var(--glass);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- شريط الأخبار --- */
+        .news-ticker {
+            background: rgba(0, 210, 255, 0.1);
+            border-top: 1px solid var(--neon-blue);
+            border-bottom: 1px solid var(--neon-blue);
+            padding: 10px 0;
+            margin: 10px 0;
+            overflow: hidden;
+            display: flex;
+            position: relative;
+        }
+
+        .ticker-text {
+            display: inline-block;
+            white-space: nowrap;
+            font-weight: bold;
+            color: var(--neon-blue);
+            text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+            animation: ticker-move-ar 25s linear infinite;
+        }
+
+        @keyframes ticker-move-ar {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* --- السلايدر --- */
+        .slider-wrapper {
+            margin: 15px;
+            border-radius: 20px;
+            padding: 5px;
+            background: linear-gradient(45deg, var(--neon-blue), var(--neon-purple));
+            box-shadow: 0 0 25px rgba(157, 80, 187, 0.4);
+        }
+
+        .main-slider {
+            border-radius: 15px;
+            overflow: hidden;
+            background: #000;
+            height: 180px;
+            position: relative;
+        }
+
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .slide.active { opacity: 1; position: relative; }
+        .slide img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* --- الشبكة والأقسام --- */
+        .home-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 45px 15px;
+            padding: 30px 15px 120px;
+        }
+
+        .service-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .service-card:active { transform: scale(0.95); }
+
+        .free-icon {
+            position: relative;
+            width: 130px;
+            height: 120px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .free-icon img {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 5px var(--neon-blue)) drop-shadow(0 0 15px var(--neon-blue));
+            transition: 0.3s ease;
+        }
+
+        .service-card h3 {
+            margin-top: 20px;
+            padding: 8px 25px;
+            border: 2px solid var(--neon-blue);
+            border-radius: 15px;
+            background: rgba(10, 10, 30, 0.8);
+            box-shadow: 0 0 10px var(--neon-blue), inset 0 0 5px var(--neon-blue);
+            font-size: 1rem;
+            color: #fff;
+            text-shadow: 0 0 8px var(--neon-blue);
+            text-align: center;
+            min-width: 120px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* --- الناف بار --- */
+        .sidenav {
+            height: 100%;
+            width: 0;
+            position: fixed;
+            z-index: 9999;
+            top: 0;
+            right: 0;
+            background-color: rgba(5, 5, 15, 0.98);
+            border-left: 2px solid var(--neon-blue);
+            box-shadow: -10px 0 30px rgba(0, 210, 255, 0.5);
+            overflow-x: hidden;
+            transition: 0.5s;
+            padding-top: 60px;
+        }
+
+        .sidenav a {
+            padding: 15px 25px;
+            text-decoration: none;
+            font-size: 1.2rem;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .sidenav .closebtn {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            font-size: 30px;
+            color: var(--neon-blue);
+            cursor: pointer;
+        }
+
+        .admin-link {
+            color: var(--neon-red) !important;
+            border-top: 1px solid rgba(255, 49, 49, 0.2);
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        /* --- البار السفلي --- */
+        .bottom-tab-bar {
+            position: fixed;
+            bottom: 0; width: 100%;
+            display: flex; justify-content: space-around;
+            background: rgba(5, 5, 15, 0.95);
+            backdrop-filter: blur(15px);
+            padding: 12px 0;
+            border-top: 2px solid var(--neon-blue);
+            z-index: 1000;
+        }
+
+        .tab-item { color: #666; text-decoration: none; display: flex; flex-direction: column; align-items: center; font-size: 0.8rem; }
+        .tab-item.active { color: var(--neon-blue); text-shadow: 0 0 15px var(--neon-blue); }
+        .tab-item i { font-size: 1.6rem; margin-bottom: 4px; }
+    </style>
+</head>
+<body>
+
+<header class="main-header">
+    <div class="brand-container">
+        <i class="fas fa-bars" onclick="openNav()" style="font-size: 1.6rem; color: var(--neon-blue); cursor: pointer; margin-left: 10px;"></i>
+        <img src="logo.png" alt="Logo" class="header-logo">
+        <h1 class="brand-title">الريان</h1>
+    </div>
+    <div class="header-balance">
+         <i class="fas fa-wallet" style="color: var(--neon-blue);"></i>
+         <span id="user-balance-header" style="font-weight: bold; margin-right: 5px;">0.00 $</span>
+    </div>
+</header>
+
+<div class="news-ticker">
+    <div id="newsContainer" class="ticker-text">
+        جاري تحميل الأخبار...
+    </div>
+</div>
+
+<div class="slider-wrapper">
+    <div class="main-slider" id="sliderContainer"></div>
+</div>
+
+<section class="home-grid">
+    <div class="service-card" onclick="location.href='games.html'">
+        <div class="free-icon"><img src="games-icon.png"></div>
+        <h3>قسم الألعاب</h3>
+    </div>
+    <div class="service-card" onclick="location.href='apps.html'">
+        <div class="free-icon"><img src="apps-icon.png"></div>
+        <h3>قسم التطبيقات</h3>
+    </div>
+    <div class="service-card" onclick="location.href='balance.html'">
+        <div class="free-icon"><img src="balance-icon.png"></div>
+        <h3>قسم الرصيد</h3>
+    </div>
+    <div class="service-card" onclick="location.href='crypto.html'">
+        <div class="free-icon"><img src="crypto-icon.png"></div>
+        <h3>قسم الكريبتو</h3>
+    </div>
+    <div class="service-card" onclick="location.href='social.html'">
+        <div class="free-icon"><img src="social-icon.png"></div>
+        <h3>تواصل اجتماعي</h3>
+    </div>
+    <div class="service-card" onclick="showSoonAlert()">
+        <div class="free-icon" style="filter: grayscale(1); opacity: 0.6;"><img src="transfer-icon.png"></div>
+        <h3 style="border-color: #444; box-shadow: none; color: #888;">سيتوفر قريباً</h3>
+    </div>
+</section>
+
+<div id="mySidenav" class="sidenav">
+    <span class="closebtn" onclick="closeNav()">&times;</span>
+    <div id="guest-menu">
+        <a href="login.html"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</a>
+        <a href="signup.html"><i class="fas fa-user-plus"></i> إنشاء حساب</a>
+    </div>
+    <div id="user-menu" style="display: none;">
+        <a href="javascript:void(0)" onclick="showProfile()"><i class="fas fa-user-circle"></i> حسابي الشخصي</a>
+        <a href="wallet.html"><i class="fas fa-wallet"></i> محفظتي</a>
+        <div id="admin-section" style="display: none;">
+            <a href="javascript:void(0)" onclick="goToAdmin()" class="admin-link"><i class="fas fa-user-shield"></i> لوحة الإدارة</a>
+        </div>
+        <a href="javascript:void(0)" onclick="logout()" style="color: #ff4d4d;"><i class="fas fa-sign-out-alt"></i> خروج</a>
+    </div>
+</div>
+
+<footer class="bottom-tab-bar">
+    <a href="main.html" class="tab-item active"><i class="fas fa-home"></i><span>الرئيسية</span></a>
+    <a href="wallet.html" class="tab-item"><i class="fas fa-wallet"></i><span>محفظتي</span></a>
+    <a href="orders.html" class="tab-item"><i class="fas fa-shopping-bag"></i><span>طلباتي</span></a>
+</footer>
+
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKIYsR611T7_VORhU2UxViapC-jqtLsbflhV6tRMDI8M2SRIHfqPoMswkwChNXiY0NEg/exec";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadNewsAndSlider();
+        
+        const accessToken = localStorage.getItem("accessToken");
+        const cachedBalance = localStorage.getItem("userBalance");
+        
+        if(cachedBalance) updateBalanceUI(cachedBalance);
+
+        if(accessToken) {
+            document.getElementById("guest-menu").style.display = "none";
+            document.getElementById("user-menu").style.display = "block";
+            syncUserDataFromServer();
+        }
+    });
+
+    async function loadNewsAndSlider() {
+        try {
+            // جلب الأخبار
+            const newsRes = await fetch(SCRIPT_URL, { 
+                method: "POST", 
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action: "getNews" }) 
+            });
+            const newsData = await newsRes.json();
+            const newsContainer = document.getElementById("newsContainer");  
+            if(newsData.result && newsData.result.length > 0) {  
+                newsContainer.innerHTML = newsData.result.map(n => n.text).join(" &nbsp;&nbsp;&nbsp;&nbsp; ⚡ ");  
+            } else {  
+                newsContainer.innerHTML = "لا توجد أخبار حالياً.";  
+            }  
+
+            // جلب السلايدر
+            const sliderRes = await fetch(SCRIPT_URL, { 
+                method: "POST", 
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action: "getSlider" }) 
+            });
+            const sliderData = await sliderRes.json();
+            const sliderContainer = document.getElementById("sliderContainer");  
+            if(sliderData.result && sliderData.result.length > 0) {  
+                sliderContainer.innerHTML = "";  
+                sliderData.result.forEach((item, idx) => {  
+                    const div = document.createElement("div");  
+                    div.className = "slide" + (idx === 0 ? " active" : "");  
+                    div.innerHTML = `<img src="${item.image}">`;  
+                    sliderContainer.appendChild(div);  
+                });  
+
+                let slideIdx = 0;  
+                const slides = sliderContainer.querySelectorAll(".slide");  
+                if(slides.length > 1){  
+                    if (window.sliderInterval) clearInterval(window.sliderInterval);
+                    window.sliderInterval = setInterval(() => {  
+                        slides[slideIdx].classList.remove("active");  
+                        slideIdx = (slideIdx + 1) % slides.length;  
+                        slides[slideIdx].classList.add("active");  
+                    }, 5000);  
+                }  
+            }  
+        } catch(err){ 
+            console.error("فشل تحميل البيانات:", err); 
+            document.getElementById("newsContainer").innerHTML = "تعذر الاتصال بالسيرفر.";
+        }
+    }
+
+    async function syncUserDataFromServer() {
+        const token = localStorage.getItem("accessToken");
+        if (!token) return;
+
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ 
+                    action: "getUserData",
+                    Authorization: "Bearer " + token 
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.error === "unauthorized") {
+                logout();
+                return;
+            }
+
+            if (data.uid) {
+                localStorage.setItem("userBalance", data.balance);
+                localStorage.setItem("userRole", data.role);
+                localStorage.setItem("userUID", data.uid);
+                localStorage.setItem("userName", data.name);
+                updateBalanceUI(data.balance);
+
+                if (data.role === "Admin") {
+                    document.getElementById("admin-section").style.display = "block";
+                }
+            }
+        } catch (e) { console.error("خطأ مزامنة:", e); }
+    }
+
+    function updateBalanceUI(balance) {
+        const val = parseFloat(balance || 0).toFixed(2);
+        const el = document.getElementById("user-balance-header");
+        if(el) el.innerText = val + " $";
+    }
+
+    function openNav() { document.getElementById("mySidenav").style.width = "280px"; }
+    function closeNav() { document.getElementById("mySidenav").style.width = "0"; }
+
+    function logout() { 
+        localStorage.clear();
+        window.location.href = "login.html";
+    }
+
+    async function goToAdmin() {
+        closeNav(); 
+        const token = localStorage.getItem("accessToken");
+        if(!token) return;
+
+        Swal.fire({
+            title: 'جاري التحقق...',
+            background: '#050510',
+            color: '#fff',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            willOpen: () => { Swal.showLoading(); }
+        });
+
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action: "getUserData", Authorization: "Bearer " + token })
+            });
+            const data = await response.json();
+
+            if (data.role === "Admin") {
+                Swal.close();
+                window.location.href = 'admin_panel.html';
+            } else {
+                Swal.fire({ icon: 'error', title: 'عذراً', text: 'ليست لديك صلاحية.', background: '#050510', color: '#fff' });
+            }
+        } catch (e) { Swal.fire('خطأ', 'فشل التحقق', 'error'); }
+    }
+
+    function showProfile() {
+        const name = localStorage.getItem("userName") || "غير معروف";
+        const balance = localStorage.getItem("userBalance") || "0.00";
+        const uid = localStorage.getItem("userUID");
+        const role = localStorage.getItem("userRole");
+
+        Swal.fire({
+            title: '<span style="color:var(--neon-blue)">حسابي</span>',
+            html: `
+                <div style="text-align:right; color:#fff; line-height: 1.8;">
+                    <p><b>الاسم:</b> ${name}</p>
+                    <p><b>الرصيد:</b> <span style="color:var(--neon-blue)">${parseFloat(balance).toFixed(2)} $</span></p>
+                    <p><b>الرتبة:</b> ${role === 'Admin' ? 'مسؤول' : 'عضو'}</p>
+                    <p><b>المعرف:</b> <br><small>${uid}</small></p>
+                </div>
+            `,
+            background: '#050510', confirmButtonColor: '#00d2ff'
+        });
+        closeNav();
+    }
+
+    function showSoonAlert() {
+        Swal.fire({ title: 'قريباً', text: 'هذه الخدمة ستتوفر قريباً.', icon: 'info', background: '#050510', color: '#fff' });
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <title>تسجيل الدخول - متجر الريان</title>
+    <style>
+        :root {
+            --neon-blue: #00d2ff;
+            --neon-purple: #9d50bb;
+            --bg-dark: #050510;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #fff;
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .auth-container { width: 100%; max-width: 400px; padding: 20px; }
+
+        .auth-card {
+            background: rgba(10, 10, 30, 0.9);
+            padding: 40px 30px;
+            border-radius: 25px;
+            border: 2px solid var(--neon-blue);
+            box-shadow: 0 0 25px rgba(0, 210, 255, 0.3), inset 0 0 15px rgba(0, 210, 255, 0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(15px);
+        }
+
+        .auth-card h2 {
+            font-size: 1.8rem;
+            background: linear-gradient(to right, #fff, var(--neon-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+            margin-bottom: 30px;
+        }
+
+        .auth-input {
+            width: 100%;
+            padding: 14px;
+            margin: 12px 0;
+            border: 1px solid var(--glass);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+            box-sizing: border-box;
+            outline: none;
+            text-align: center;
+            transition: 0.3s;
+        }
+
+        .auth-input:focus {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.2);
+        }
+
+        .btn-login {
+            width: 100%;
+            background: transparent;
+            border: 2px solid var(--neon-blue);
+            color: var(--neon-blue);
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: 0.4s;
+        }
+
+        .btn-login:hover {
+            background: var(--neon-blue);
+            color: #000;
+            box-shadow: 0 0 25px var(--neon-blue);
+        }
+
+        .google-btn {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            cursor: pointer;
+            color: #fff;
+        }
+
+        .signup-link { margin-top: 25px; font-size: 0.9rem; color: #888; }
+        .signup-link a { color: var(--neon-blue); text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="auth-container">
+    <div class="auth-card">
+        <h2>تسجيل الدخول</h2>
+        
+        <input type="text" id="loginEmail" class="auth-input" placeholder="المعرف أو البريد الإلكتروني">
+        <input type="password" id="loginPass" class="auth-input" placeholder="كلمة المرور">
+        <button class="btn-login" id="loginBtn" onclick="manualLogin()">دخول النظام</button>
+
+        <div style="margin: 25px 0; color: #444; font-size: 0.8rem; display: flex; align-items: center; gap: 10px; justify-content: center;">
+            <div style="height: 1px; background: #222; flex: 1;"></div>
+            <span>أو عبر الشبكات</span>
+            <div style="height: 1px; background: #222; flex: 1;"></div>
+        </div>
+
+        <button class="google-btn" onclick="loginWithGoogle()">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="22" alt="Google">
+            <span>متابعة بواسطة Google</span>
+        </button>
+
+        <div class="signup-link">
+            ليس لديك هوية رقمية؟ <a href="signup.html">إنشاء حساب جديد</a>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBtKuvlJuNva1jBBWFd-N1-xrTCn9XbgX8",
+        authDomain: "al-rayan-store-8f984.firebaseapp.com",
+        projectId: "al-rayan-store-8f984",
+        storageBucket: "al-rayan-store-8f984.firebasestorage.app",
+        messagingSenderId: "412981353095",
+        appId: "1:412981353095:web:8f9969bfe50404a217f622"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth();
+    const provider = new GoogleAuthProvider();
+    
+    // تأكد من استخدام الرابط الصحيح (الذي ينتهي بـ /exec)
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKIYsR611T7_VORhU2UxViapC-jqtLsbflhV6tRMDI8M2SRIHfqPoMswkwChNXiY0NEg/exec";
+
+    window.manualLogin = async function() {
+        const identifier = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPass').value;
+        const btn = document.getElementById('loginBtn');
+
+        if (!identifier || !password) { 
+            Swal.fire('تنبيه', 'يرجى إدخال البيانات', 'warning'); 
+            return; 
+        }
+
+        btn.disabled = true;
+        btn.innerText = "جاري التحقق...";
+
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: "loginManual",
+                    identifier: identifier,
+                    password: password
+                })
+            });
+            const data = await response.json();
+
+            if (data.accessToken) {
+                saveUserData(data);
+                Swal.fire({
+                    icon: 'success',
+                    title: 'تم الدخول',
+                    text: `مرحباً بك ${data.name}`,
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => window.location.href = "index.html");
+            } else {
+                throw new Error();
+            }
+        } catch (err) {
+            btn.disabled = false;
+            btn.innerText = "دخول النظام";
+            Swal.fire('فشل الدخول', 'بيانات غير صحيحة', 'error');
+        }
+    }
+
+    window.loginWithGoogle = function() {
+        signInWithPopup(auth, provider)
+            .then(async (result) => {
+                const uid = result.user.uid;
+                
+                // نرسل الـ UID للسكريبت للبحث عنه في شيت Users
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({
+                        action: "loginManual",
+                        identifier: uid,
+                        password: "no_password_google" // السكريبت سيتعرف عليه من الـ UID في العمود A
+                    })
+                });
+                const data = await response.json();
+
+                if(data.accessToken) {
+                    saveUserData(data);
+                    window.location.href = "index.html";
+                } else {
+                    Swal.fire('حساب غير موجود', 'يرجى إنشاء حساب أولاً عبر جوجل قبل محاولة تسجيل الدخول.', 'warning');
+                }
+            })
+            .catch(() => Swal.fire('خطأ', 'فشل الاتصال بجوجل', 'error'));
+    }
+
+    function saveUserData(data) {
+        localStorage.setItem("accessToken", data.accessToken);
+        localStorage.setItem("refreshToken", data.refreshToken);
+        localStorage.setItem("userUID", data.uid);
+        localStorage.setItem("userName", data.name);
+        localStorage.setItem("userRole", data.role);
+        localStorage.setItem("userBalance", data.balance || "0.00");
+    }
+</script>
+</body>
+</html>
