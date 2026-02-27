@@ -135,7 +135,7 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKIYsR611T7_VORhU2UxViapC-jqtLsbflhV6tRMDI8M2SRIHfqPoMswkwChNXiY0NEg/exec"; 
+    const SCRIPT_URL = "https://script.google.com/macros/s/" + "AKfycbyKIYsR611T7_VORhU2UxViapC-jqtLsbflhV6tRMDI8M2SRIHfqPoMswkwChNXiY0NEg" + "/exec"; 
     let attempts = parseInt(localStorage.getItem('loginAttempts')) || 5;
 
     const Toast = Swal.mixin({
@@ -196,7 +196,7 @@
         const res = await fetch(SCRIPT_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ ...payload, token: token })
+            body: JSON.stringify({ ...payload, Authorization: "Bearer " + token })
         });
         if (!res.ok) throw new Error("مشكلة في الشبكة");
         const text = await res.text();
@@ -274,36 +274,38 @@
         Swal.fire({ title: 'جاري المعالجة...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         try {
             const data = await adminFetch({ action: "adminAction", type: type, row: row, targetUid: uid, amount: parseFloat(amount), status: "مكتمل" });
-            if(data.result === "success" || data.status === "success") {
+            if(data.result === "success") {
                 Toast.fire({ icon: 'success', title: 'تمت الموافقة وتحديث الرصيد' });
                 fetchFinancial();
-            } else { throw new Error(data.message || data.result); }
-        } catch (e) { Toast.fire({ icon: 'error', title: 'فشلت العملية: ' + e.message }); }
+            } else { throw new Error(data.result || "فشلت العملية"); }
+        } catch (e) { Toast.fire({ icon: 'error', title: 'خطأ: ' + e.message }); }
     }
 
     async function addBalance() {
         const id = document.getElementById('targetId').value.trim();
-        const amt = parseFloat(document.getElementById('topupAmount').value);
-        if (!id || isNaN(amt)) return Toast.fire({ icon: 'warning', title: 'يرجى إدخال المعرف والمبلغ بشكل صحيح' });
+        const amt = document.getElementById('topupAmount').value;
+        if (!id || !amt) return Toast.fire({ icon: 'warning', title: 'يرجى إدخال المعرف والمبلغ' });
         
         Swal.fire({ title: 'جاري الشحن...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         try {
-            const data = await adminFetch({ 
+            const res = await adminFetch({ 
                 action: "adminAction", 
                 type: "Deposits", 
-                targetUid: id, 
-                amount: amt, 
+                targetUid: String(id), 
+                amount: parseFloat(amt), 
                 status: "مكتمل", 
-                details: "شحن يدوي من الإدارة",
                 row: "MANUAL" 
             });
-            if(data.result === "success" || data.status === "success") {
+            
+            if (res.result === "success") {
                 Toast.fire({ icon: 'success', title: 'تم شحن الرصيد بنجاح' });
                 document.getElementById('targetId').value = ""; 
                 document.getElementById('topupAmount').value = "";
                 fetchFinancial();
-            } else { throw new Error(data.message || data.result); }
-        } catch (e) { Toast.fire({ icon: 'error', title: 'حدث خطأ: ' + e.message }); }
+            } else {
+                throw new Error(res.result === "user_not_found" ? "المستخدم غير موجود" : "فشلت العملية");
+            }
+        } catch (e) { Toast.fire({ icon: 'error', title: e.message }); }
     }
 
     async function updateStatusGeneral(sheet, row, status) {
