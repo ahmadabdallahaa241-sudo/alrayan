@@ -80,19 +80,18 @@
     window.verifyOTP = function() {
         if (document.getElementById('otpInput').value == generatedOTP) {
             createUserWithEmailAndPassword(auth, tempUserData.email, tempUserData.pass)
-                .then(res => saveToSheet(res.user.uid, tempUserData.name, tempUserData.email, tempUserData.phone, tempUserData.country, tempUserData.pass))
+                .then(res => saveToSheet(res.user.uid, tempUserData.name, tempUserData.email))
                 .catch(err => Swal.fire('فشل', err.message, 'error'));
         }
     }
 
     window.loginWithGoogle = function() {
         signInWithPopup(auth, provider).then(res => {
-            const randomPass = "google_" + Math.random().toString(36).slice(-8);
-            saveToSheet(res.user.uid, res.user.displayName, res.user.email, "Google", "Google", randomPass);
-        });
+            saveToSheet(res.user.uid, res.user.displayName, res.user.email);
+        }).catch(() => Swal.fire('خطأ', 'فشل الاتصال بجوجل', 'error'));
     }
 
-function saveToSheet(uid, name, email, phone, country, pass) {
+function saveToSheet(uid, name, email) {
     Swal.fire({
         title: 'جاري مزامنة الحساب...',
         allowOutsideClick: false,
@@ -100,16 +99,12 @@ function saveToSheet(uid, name, email, phone, country, pass) {
     });
 
     const payload = {
-        action: "signup",
+        action: "googleLogin",
         uid: String(uid),
         name: String(name),
-        email: String(email),
-        phone: String(phone),
-        country: String(country),
-        pass: String(pass)
+        email: String(email)
     };
 
-    // نستخدم JSON.stringify ونرسله كـ text/plain لتجنب مشاكل الـ CORS بالكامل
     fetch(SCRIPT_URL, {
         method: 'POST',
         headers: {
@@ -119,26 +114,25 @@ function saveToSheet(uid, name, email, phone, country, pass) {
     })
     .then(res => res.json())
     .then(data => {
-        if (data.result === "success") {
+        if (data.accessToken) {
             localStorage.setItem("accessToken", data.accessToken);
-            localStorage.setItem("refreshToken", data.refreshToken);
-            localStorage.setItem("userUID", uid);
-            localStorage.setItem("userName", name);
-            localStorage.setItem("userRole", "user");
+            localStorage.setItem("userUID", data.uid);
+            localStorage.setItem("userName", data.name);
+            localStorage.setItem("userRole", data.role);
+            localStorage.setItem("userBalance", data.balance || "0.00");
             
-            Swal.fire('نجح التسجيل', 'تم حفظ بياناتك بنجاح', 'success').then(() => {
+            Swal.fire('نجاح', 'تم إعداد حسابك بنجاح', 'success').then(() => {
                 window.location.href = "index.html";
             });
         } else {
-            Swal.fire('خطأ في السيرفر', data.result || 'فشل الحفظ', 'error');
+            Swal.fire('خطأ في السيرفر', 'فشل المزامنة مع قاعدة البيانات', 'error');
         }
     })
     .catch(err => {
         console.error("Signup Fetch Error:", err);
-        Swal.fire('فشل الاتصال', 'حدث خطأ أثناء الاتصال بقاعدة البيانات. تأكد من نشر السكريبت كـ Web App بصلاحية Anyone.', 'error');
+        Swal.fire('فشل الاتصال', 'حدث خطأ أثناء الاتصال بالسيرفر. يرجى المحاولة لاحقاً.', 'error');
     });
 }
-
 
 </script>
 </body>
