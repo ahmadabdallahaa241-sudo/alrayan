@@ -166,6 +166,7 @@
             Swal.fire({ title: 'جاري التحقق...', didOpen: () => Swal.showLoading() });
             const res = await fetch(SCRIPT_URL, {
                 method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({ action: "loginManual", identifier: userInput, password: passInput })
             });
             const data = await res.json();
@@ -194,11 +195,12 @@
         const token = localStorage.getItem('adminToken');
         const res = await fetch(SCRIPT_URL, {
             method: 'POST',
-            body: JSON.stringify({ ...payload, Authorization: "Bearer " + token })
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ ...payload, token: token })
         });
         if (!res.ok) throw new Error("Network error");
         const text = await res.text();
-        try { return JSON.parse(text); } catch (e) { return text; }
+        try { return JSON.parse(text); } catch (e) { return { result: text }; }
     }
 
     function showTab(tabId) {
@@ -246,36 +248,21 @@
         try {
             const data = await adminFetch({ action: "getAllFinancialRequests" });
             const tbody = document.getElementById('financialTableBody');
-            
-            // عكس المصفوفة لإظهار الأحدث في الأعلى
             tbody.innerHTML = (data.result || []).reverse().map(req => {
                 const isDep = req.type === "Deposits";
                 const statusColor = req.status === 'قيد الانتظار' ? '#ffcc00' : (req.status === 'مكتمل' ? 'var(--neon-green)' : 'var(--neon-red)');
-                
                 return `
                 <tr>
                     <td>
                         <small style="color:#aaa">${req.userId}</small><br>
                         ${isDep ? '<span style="color:var(--neon-green); font-size:0.7rem;">[إيداع]</span>' : '<span style="color:var(--neon-red); font-size:0.7rem;">[سحب]</span>'}
                     </td>
-                    <td style="color:${isDep ? 'var(--neon-green)' : 'var(--neon-red)'}; font-weight:bold;">
-                        ${req.amount}$
-                    </td>
-                    <td>
-                        <div style="max-width:200px; font-size:0.75rem; color:#eee; margin:0 auto; line-height:1.4;">
-                            ${req.details}
-                        </div>
-                    </td>
+                    <td style="color:${isDep ? 'var(--neon-green)' : 'var(--neon-red)'}; font-weight:bold;">${req.amount}$</td>
+                    <td><div style="max-width:200px; font-size:0.75rem; color:#eee; margin:0 auto; line-height:1.4;">${req.details}</div></td>
                     <td>
                         ${req.status === 'قيد الانتظار' ? 
-                        `<button class="btn-action ${isDep ? 'btn-green' : 'btn-red'}" 
-                                 onclick="approveFinancial('${req.type}', ${req.row}, '${req.userId}', '${req.amount}')">
-                            إتمام وقبول
-                         </button>
-                         <button class="btn-action btn-white" style="background:#444; color:#fff;" 
-                                 onclick="updateStatusGeneral('${req.type}', ${req.row}, 'ملغي')">
-                            رفض
-                         </button>` 
+                        `<button class="btn-action ${isDep ? 'btn-green' : 'btn-red'}" onclick="approveFinancial('${req.type}', ${req.row}, '${req.userId}', '${req.amount}')">إتمام وقبول</button>
+                         <button class="btn-action btn-white" style="background:#444; color:#fff;" onclick="updateStatusGeneral('${req.type}', ${req.row}, 'ملغي')">رفض</button>` 
                         : `<span class="status-badge" style="border:1px solid ${statusColor}; color:${statusColor}">${req.status}</span>`}
                     </td>
                 </tr>`;
@@ -286,33 +273,37 @@
     async function approveFinancial(type, row, uid, amount) {
         Swal.fire({ title: 'جاري المعالجة...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         try {
-            await adminFetch({ action: "adminAction", type: type, row: row, targetUid: uid, amount: amount, status: "مكتمل" });
-            Toast.fire({ icon: 'success', title: 'تمت الموافقة وتحديث الرصيد' });
-            fetchFinancial();
-        } catch (e) { Toast.fire({ icon: 'error', title: 'فشلت العملية' }); }
+            const res = await adminFetch({ action: "adminAction", type: type, row: row, targetUid: uid, amount: parseFloat(amount), status: "مكتمل" });
+            if(res.result === "success") {
+                Toast.fire({ icon: 'success', title: 'تمت الموافقة وتحديث الرصيد' });
+                fetchFinancial();
+            } else { throw new Error(res.result); }
+        } catch (e) { Toast.fire({ icon: 'error', title: 'فشلت العملية: ' + e.message }); }
     }
 
     async function addBalance() {
         const id = document.getElementById('targetId').value.trim();
-        const amt = document.getElementById('topupAmount').value;
-        if (!id || !amt) return Toast.fire({ icon: 'warning', title: 'يرجى إدخال المعرف والمبلغ' });
+        const amt = parseFloat(document.getElementById('topupAmount').value);
+        if (!id || isNaN(amt)) return Toast.fire({ icon: 'warning', title: 'يرجى إدخال المعرف والمبلغ بشكل صحيح' });
         
         Swal.fire({ title: 'جاري الشحن...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         try {
-            await adminFetch({ 
+            const res = await adminFetch({ 
                 action: "adminAction", 
                 type: "Deposits", 
                 targetUid: id, 
                 amount: amt, 
                 status: "مكتمل", 
                 details: "شحن يدوي من الإدارة",
-                row: null 
+                row: 0 
             });
-            Toast.fire({ icon: 'success', title: 'تم شحن الرصيد بنجاح' });
-            document.getElementById('targetId').value = ""; 
-            document.getElementById('topupAmount').value = "";
-            fetchFinancial();
-        } catch (e) { Toast.fire({ icon: 'error', title: 'حدث خطأ أثناء الشحن' }); }
+            if(res.result === "success") {
+                Toast.fire({ icon: 'success', title: 'تم شحن الرصيد بنجاح' });
+                document.getElementById('targetId').value = ""; 
+                document.getElementById('topupAmount').value = "";
+                fetchFinancial();
+            } else { throw new Error(res.result); }
+        } catch (e) { Toast.fire({ icon: 'error', title: 'حدث خطأ: ' + e.message }); }
     }
 
     async function updateStatusGeneral(sheet, row, status) {
