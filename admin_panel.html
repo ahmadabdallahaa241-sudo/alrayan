@@ -223,14 +223,14 @@
             tbody.innerHTML = (data.result || []).reverse().map(order => `
                 <tr>
                     <td><small>${order.uid}</small></td>
-                    <td><span class="section-tag">${order.section}</span><br><b style="color:var(--neon-blue)">${order.product}</b></td>
-                    <td>${order.phone || '---'}${order.code ? `<br><b style="color:var(--neon-purple)">المرسل: ${order.code}</b>` : ''}</td>
-                    <td><span class="status-badge" style="color:${order.status === 'قيد الانتظار' ? '#ffcc00' : '#00ff88'}">${order.status}</span></td>
+                    <td><b style="color:var(--neon-blue)">${order.product}</b><br><span class="section-tag">${order.section}</span></td>
+                    <td>ID: ${order.details || '---'}</td>
+                    <td><span class="status-badge" style="color:${order.status === 'قيد الانتظار' ? '#ffcc00' : (order.status === 'مكتمل' ? '#00ff88' : '#ff4444')}">${order.status}</span></td>
                     <td>
                         ${order.status === 'قيد الانتظار' ? 
                         `<button class="btn-action btn-white" onclick="completeOrderWithCode(${order.row})">إتمام + كود</button>
-                         <button class="btn-action btn-red" onclick="updateStatusGeneral('Orders', ${order.row}, 'ملغي')">رفض</button>` 
-                        : '---'}
+                         <button class="btn-action btn-red" onclick="updateStatusGeneral('Orders', ${order.row}, 'ملغي', '${order.uid}', 0)">رفض</button>` 
+                        : `<b style="color:var(--neon-purple)">${order.code}</b>`}
                     </td>
                 </tr>`).join('');
         } catch (e) { console.error(e); }
@@ -249,20 +249,20 @@
             const data = await adminFetch({ action: "getAllFinancialRequests" });
             const tbody = document.getElementById('financialTableBody');
             tbody.innerHTML = (data.result || []).reverse().map(req => {
-                const isDep = req.type === "Deposits";
+                const isDep = req.requestType === "إيداع";
                 const statusColor = req.status === 'قيد الانتظار' ? '#ffcc00' : (req.status === 'مكتمل' ? 'var(--neon-green)' : 'var(--neon-red)');
                 return `
                 <tr>
                     <td>
                         <small style="color:#aaa">${req.userId}</small><br>
-                        ${isDep ? '<span style="color:var(--neon-green); font-size:0.7rem;">[إيداع]</span>' : '<span style="color:var(--neon-red); font-size:0.7rem;">[سحب]</span>'}
+                        <b style="color:${isDep ? 'var(--neon-green)' : 'var(--neon-red)'}; font-size:0.8rem;">[${req.requestType}]</b>
                     </td>
                     <td style="color:${isDep ? 'var(--neon-green)' : 'var(--neon-red)'}; font-weight:bold;">${req.amount}$</td>
                     <td><div style="max-width:200px; font-size:0.75rem; color:#eee; margin:0 auto; line-height:1.4;">${req.details}</div></td>
                     <td>
                         ${req.status === 'قيد الانتظار' ? 
-                        `<button class="btn-action ${isDep ? 'btn-green' : 'btn-red'}" onclick="approveFinancial('${req.type}', ${req.row}, '${req.userId}', '${req.amount}')">إتمام وقبول</button>
-                         <button class="btn-action btn-white" style="background:#444; color:#fff;" onclick="updateStatusGeneral('${req.type}', ${req.row}, 'ملغي')">رفض</button>` 
+                        `<button class="btn-action ${isDep ? 'btn-green' : 'btn-white'}" onclick="approveFinancial('${req.type}', ${req.row}, '${req.userId}', '${req.amount}')">قبول</button>
+                         <button class="btn-action btn-red" onclick="updateStatusGeneral('${req.type}', ${req.row}, 'ملغي', '${req.userId}', '${req.amount}')">رفض</button>` 
                         : `<span class="status-badge" style="border:1px solid ${statusColor}; color:${statusColor}">${req.status}</span>`}
                     </td>
                 </tr>`;
@@ -308,12 +308,15 @@
         } catch (e) { Toast.fire({ icon: 'error', title: e.message }); }
     }
 
-    async function updateStatusGeneral(sheet, row, status) {
+    async function updateStatusGeneral(type, row, status, uid, amount) {
+        if (!confirm("هل أنت متأكد؟")) return;
         Swal.fire({ title: 'جاري التحديث...', didOpen: () => Swal.showLoading() });
         try {
-            await adminFetch({ action: "adminAction", type: sheet, row: row, status: status });
-            Toast.fire({ icon: 'success', title: 'تم التحديث بنجاح' });
-            refreshData();
+            const res = await adminFetch({ action: "adminAction", type: type, row: row, status: status, targetUid: uid, amount: amount });
+            if (res.result === "success") {
+                Toast.fire({ icon: 'success', title: 'تم التحديث بنجاح' });
+                refreshData();
+            }
         } catch (e) { Toast.fire({ icon: 'error', title: 'فشل التحديث' }); }
     }
 
