@@ -18,6 +18,7 @@
         
         body { 
             background-color: var(--bg-dark); 
+            background-image: radial-gradient(circle at top right, rgba(0, 210, 255, 0.03), transparent);
             color: #fff; margin: 0; font-family: 'Segoe UI', sans-serif; 
             min-height: 100vh; overflow-x: hidden;
         }
@@ -26,56 +27,66 @@
             display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; 
             background: rgba(10, 10, 30, 0.9); backdrop-filter: blur(12px); 
             border-bottom: 2px solid var(--neon-blue); position: sticky; top: 0; z-index: 1000; 
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.2);
         }
 
-        .btn-back { color: var(--neon-blue); text-decoration: none; font-size: 1.2rem; }
+        .btn-back { color: var(--neon-blue); text-decoration: none; font-size: 1.2rem; transition: 0.3s; }
+        .btn-back:hover { text-shadow: 0 0 10px var(--neon-blue); }
 
         .container { padding: 20px 15px 120px; max-width: 800px; margin: 0 auto; }
 
         .order-card { 
-            background: rgba(10, 10, 30, 0.8); border-radius: 15px; padding: 18px; 
-            margin-bottom: 15px; border: 1px solid rgba(0, 210, 255, 0.2); 
+            background: rgba(15, 15, 35, 0.8); border-radius: 20px; padding: 20px; 
+            margin-bottom: 15px; border: 1px solid rgba(255, 255, 255, 0.05); 
             box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: 0.3s;
+            backdrop-filter: blur(10px);
+            animation: slideIn 0.4s ease-out;
         }
 
-        .order-card:hover { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0, 210, 255, 0.2); }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        .order-card:hover { border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(0, 210, 255, 0.15); }
 
         .order-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
 
         .product-name { 
-            font-weight: bold; color: var(--neon-blue); font-size: 1.05rem; 
-            flex: 1; margin-left: 10px; line-height: 1.4; text-shadow: 0 0 5px rgba(0, 210, 255, 0.3); 
+            font-weight: bold; color: var(--neon-blue); font-size: 1.1rem; 
+            flex: 1; margin-left: 10px; line-height: 1.4; text-shadow: 0 0 8px rgba(0, 210, 255, 0.2); 
         }
 
-        .status-badge { padding: 5px 12px; border-radius: 10px; font-size: 0.75rem; font-weight: bold; }
+        .status-badge { padding: 6px 14px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
         .status-pending { background: rgba(249, 212, 35, 0.1); color: var(--neon-yellow); border: 1px solid var(--neon-yellow); }
         .status-completed { background: rgba(0, 255, 136, 0.1); color: var(--neon-green); border: 1px solid var(--neon-green); }
         .status-cancelled { background: rgba(255, 75, 43, 0.1); color: var(--neon-red); border: 1px solid var(--neon-red); }
 
-        .order-info { font-size: 0.85rem; color: #aaa; margin: 6px 0; display: flex; align-items: center; }
-        .order-info i { margin-left: 8px; color: var(--neon-blue); width: 15px; text-align: center; }
+        .order-info { font-size: 0.85rem; color: #ccc; margin: 8px 0; display: flex; align-items: center; }
+        .order-info i { margin-left: 10px; color: var(--neon-blue); width: 18px; text-align: center; font-size: 0.9rem; }
+
+        .price-tag { color: var(--neon-green); font-weight: bold; margin-right: auto; }
 
         .code-box { 
-            margin-top: 15px; padding: 12px; background: #000; border-radius: 10px; 
+            margin-top: 15px; padding: 15px; background: rgba(0,0,0,0.4); border-radius: 12px; 
             border: 1px dashed var(--neon-blue); display: flex; justify-content: space-between; 
-            align-items: center; cursor: pointer;
+            align-items: center; cursor: pointer; transition: 0.2s;
         }
+        .code-box:active { transform: scale(0.98); background: rgba(0, 210, 255, 0.05); }
 
-        .code-text { color: var(--neon-green); font-family: monospace; font-size: 1rem; font-weight: bold; }
+        .code-label { font-size: 0.7rem; color: #888; display: block; margin-bottom: 4px; }
+        .code-text { color: var(--neon-green); font-family: 'Courier New', monospace; font-size: 1.1rem; font-weight: bold; letter-spacing: 1px; }
 
-        #loading { text-align: center; margin-top: 50px; color: var(--neon-blue); }
+        #loading { text-align: center; margin-top: 50px; color: var(--neon-blue); font-size: 1.1rem; }
     </style>
 </head>
 <body>
 
 <header class="main-header">
     <a href="index.html" class="btn-back"><i class="fas fa-chevron-right"></i></a>
-    <div style="font-weight: 900; font-size: 1.2rem;">سجل مشترياتي</div>
+    <div style="font-weight: 900; font-size: 1.2rem; letter-spacing: 1px;">سجل طلباتي</div>
     <div style="width: 30px;"></div>
 </header>
 
 <div class="container" id="ordersContainer">
-    <div id="loading"><i class="fas fa-spinner fa-spin"></i> جاري تحميل طلباتك...</div>
+    <div id="loading"><i class="fas fa-spinner fa-spin"></i> جاري مزامنة طلباتك...</div>
 </div>
 
 <script>
@@ -93,7 +104,7 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({ 
-                    action: "getUserOrders", 
+                    action: "getUserData", // تغيير الأكشن ليتوافق مع code.js
                     Authorization: "Bearer " + token 
                 })
             });
@@ -106,21 +117,33 @@
                 return;
             }
 
-            if (data && data.result) {
-                renderOrders(data.result.reverse());
-            }
+            // في getUserData، المعاملات تكون داخل مصفوفة transactions
+            // نحتاج فقط المعاملات التي نوعها "Order" أو "Withdraw" (حسب تسمية السكريبت للطلب)
+            if (data && data.transactions) {
+    // نرسل جميع المعاملات للدالة، وهي ستتولى الفرز
+    renderOrders(data.transactions.reverse());
+} else {
+    renderOrders([]);
+}
         } catch (e) {
             console.error(e);
-            document.getElementById('ordersContainer').innerHTML = "<p style='text-align:center; color:var(--neon-red);'>حدث خطأ في جلب البيانات</p>";
+            document.getElementById('ordersContainer').innerHTML = "<p style='text-align:center; color:var(--neon-red);'>عذراً، تعذر الاتصال بالخادم</p>";
         }
     }
 
-    function renderOrders(orders) {
+        function renderOrders(transactions) {
         const container = document.getElementById('ordersContainer');
         container.innerHTML = '';
 
-        if (!orders || orders.length === 0) {
-            container.innerHTML = "<p style='text-align:center; color:#555; padding-top:50px;'>لا توجد طلبات سابقة في حسابك</p>";
+        // تصفية المعاملات لعرض الطلبات (Orders) فقط
+        const orders = transactions ? transactions.filter(t => t.type === "Order") : [];
+
+        if (orders.length === 0) {
+            container.innerHTML = `
+                <div style="text-align:center; padding-top:80px; color:#444;">
+                    <i class="fas fa-box-open" style="font-size:4rem; margin-bottom:15px; opacity:0.3;"></i>
+                    <p>سجل مشترياتك فارغ حالياً</p>
+                </div>`;
             return;
         }
 
@@ -130,29 +153,45 @@
 
             const card = document.createElement('div');
             card.className = "order-card";
+            
+            // تم تعديل جلب البيانات لتطابق ما يرسله الأب سكريبت (product, section, amount, code)
             card.innerHTML = `
                 <div class="order-header">
-                    <span class="product-name">${order.product}</span>
+                    <span class="product-name">${order.product || 'طلب منتج'}</span>
                     <span class="status-badge ${statusClass}">${order.status}</span>
                 </div>
                 <div class="order-info">
-                    <i class="fas fa-layer-group"></i> <span>القسم: ${order.section}</span>
+                    <i class="fas fa-layer-group"></i> <span>القسم: ${order.section || '---'}</span>
                 </div>
                 <div class="order-info">
-                    <i class="fas fa-id-card"></i> <span>الرقم/الايدي: ${order.phone}</span>
+                    <i class="fas fa-calendar-alt"></i> <span>الحالة: ${order.date || 'طلب خدمة'}</span>
                 </div>
-                ${order.code && order.code !== "---" ? `
+                <div class="order-info">
+                    <i class="fas fa-money-bill-wave"></i> <span>المبلغ المخصوم:</span>
+                    <span class="price-tag">${order.amount}$</span>
+                </div>
+                
+                ${order.status === "مكتمل" ? `
                     <div class="code-box" onclick="copyCode('${order.code}')">
-                        <span class="code-text">${order.code}</span>
-                        <i class="far fa-copy" style="color: var(--neon-blue);"></i>
+                        <div style="flex:1;">
+                            <span class="code-label">كود التفعيل / التفاصيل</span>
+                            <span class="code-text" style="word-break: break-all; display: block; margin-top: 5px; color: var(--neon-blue);">${order.code || 'انقر للنسخ'}</span>
+                        </div>
+                        <i class="far fa-copy" style="color: var(--neon-blue); font-size: 1.2rem;"></i>
                     </div>
-                ` : ''}
+                ` : `
+                    <div style="margin-top:10px; font-size:0.75rem; color:#666; text-align:center; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">
+                        ${order.status === "قيد الانتظار" ? "سيظهر كود التسليم هنا فور اكتمال الطلب" : "تم إلغاء هذا الطلب وإعادة الرصيد"}
+                    </div>
+                `}
             `;
             container.appendChild(card);
         });
     }
 
+
     function copyCode(text) {
+        if(text === "انقر للنسخ") return;
         navigator.clipboard.writeText(text);
         Swal.fire({ 
             title: 'تم النسخ!', 
@@ -166,8 +205,7 @@
     }
 
     window.onload = loadOrders;
-    // تحديث السجل تلقائياً كل 15 ثانية لمتابعة حالة الطلب
-    setInterval(loadOrders, 15000);
+    setInterval(loadOrders, 20000); // تحديث كل 20 ثانية
 </script>
 </body>
 </html>
